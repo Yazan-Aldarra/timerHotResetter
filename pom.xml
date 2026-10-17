@@ -16,6 +16,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf</artifactId>
+            <version>3.1.5.RELEASE</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
@@ -54,17 +59,17 @@
             <version>${jersey.version}</version>
         </dependency>
         <!-- 3. Jackson (JSON) -->
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-jackson</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
+        <!-- <dependency> -->
+        <!--     <groupId>org.glassfish.jersey.media</groupId> -->
+        <!--     <artifactId>jersey-media-json-jackson</artifactId> -->
+        <!--     <version>${jersey.version}</version> -->
+        <!-- </dependency> -->
         <!-- Belangrijk voor LocalDate support! -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
+        <!-- <dependency> -->
+        <!--     <groupId>com.fasterxml.jackson.datatype</groupId> -->
+        <!--     <artifactId>jackson-datatype-jsr310</artifactId> -->
+        <!--     <version>${jackson.version}</version> -->
+        <!-- </dependency> -->
         <!-- 4. Logging (SLF4J No-Op) -->
         <!-- Voorkomt warnings bij opstarten -->
         <dependency>

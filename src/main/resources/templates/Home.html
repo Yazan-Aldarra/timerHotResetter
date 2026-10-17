@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title</title>
+</head>
+
+<body>
+    <h1>Start a timer.</h1>
+
+    <li hidden=true id="template_player_list_item">
+        <label for="name_0">Name</label>
+        <input id="name_0" type="text" name="name_0">
+    </li>
+
+    <form>
+        <ul id="players_list">
+            <li>
+                <label for="name_1">Player 1 name: </label>
+                <input id="name_1" type="text" name="name_1">
+            </li>
+        </ul>
+    </form>
+    <button id="add_user">add player</button>
+
+    <script>
+        const btn = document.querySelector("#add_user");
+        const players_list = document.querySelector("#players_list");
+        const template_player_list_item = document.querySelector("#template_player_list_item");
+        btn.addEventListener("click", () => {
+
+            const list_items = players_list.querySelectorAll("li");
+
+            // The below sytax allow us to cast a type. (fake casting for the language server)
+            const new_player = /** @type {HTMLElement} */ (template_player_list_item.cloneNode(true));
+
+            const input = new_player.querySelector("input");
+            const label = new_player.querySelector("label");
+
+            const index = list_items.length + 1;
+            const name = `name_${index}`;
+
+            input.setAttribute("id", name);
+            input.setAttribute("name", name);
+            label.setAttribute("for", name);
+
+            label.textContent = `Player ${index} name: `;
+
+            new_player.removeAttribute("hidden");
+            new_player.removeAttribute("id");
+            players_list.appendChild(new_player);
+        });
+    </script>
+</body>
+
+</html>
