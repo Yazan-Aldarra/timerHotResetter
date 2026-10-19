@@ -30,11 +30,16 @@ Dark, focused "tabletop" theme:
 - Top bar with brand mark and a "Now playing" label.
 - Current player name displayed large and bold.
 - Timer digits use `clamp()` sizing and tabular numerals so they do not jump while counting.
-- Slim progress bar under the digits (CSS variable updated by JS).
-- Low-time state: last 10 seconds switch digits/bar to red and pulse gently.
+- Circular clock ring around the digits, with tick marks. The player-colored arc depletes like a clock and fades as time runs down.
+- Low-time state: last 10 seconds switch digits/ring to red and pulse gently.
 - Roster strip of player pills, with the active player highlighted; keeps everyone oriented.
+- **Player colors:** a curated 8-color palette (cyan, amber, violet, pink, blue, green, orange, lime) is assigned by player order and cycles after 8. Each roster pill shows its color; the active pill is solid with dark text.
+- The timer card adopts the current player's color across its whole surface: background tint, border, aura, player name, clock ring, ripple/flash, focus ring, and hint dot. Colors change during the name-swap blur, with a short transition.
+- Low-time red overrides the clock digits, ring, border, and aura only; the player name, card background, and roster keep their assigned color.
 - Toggle button becomes a pill with play/pause icon and a label that changes with state ("Pause timer" / "Resume timer").
-- `aria-live="polite"` on player name and timer for screen readers.
+- The whole timer card is a skip target: clicking/tapping it calls `nextUser()`. It is also keyboard-activatable with Enter/Space.
+- Skip feedback: a ripple from the click point, a brief glow flash on the card, and a blur/slide "swap" animation on the player name. Animations are skipped under `prefers-reduced-motion`.
+- `aria-live="polite"` on the player name; the timer uses `role="timer"` with `aria-live="off"` so the countdown does not spam screen readers.
 - Existing Thymeleaf bindings (`th:text`, `th:each`) and timer logic stay intact.
 
 ## Implementation Plan
@@ -44,13 +49,15 @@ Dark, focused "tabletop" theme:
 3. Rework markup only enough to add semantic wrappers, helper text, and icon SVGs. Preserve every hook the JS depends on (`#players_list`, `#template_player_list_item`, `#add_user`, `#timer`, `#users`, `#current_user`, `timeInSec`, `name`).
 4. Make small, contained JS additions in `Timer.html`:
    - update toggle button label/icon,
-   - set the progress CSS variable each tick,
+   - update the circular clock ring's stroke offset and fade each tick,
    - add/remove an `.is-low` class at 10 seconds,
-   - highlight the active roster pill in `nextUser()`.
+   - highlight the active roster pill in `nextUser()`,
+   - assign palette colors to players by index and set `--player-color` on the card and roster pills in `setCurrentUser()`,
+   - wire card click + Enter/Space to `nextUser()`, spawn a ripple at the pointer, and run a two-phase name swap with the Web Animations API (change the player and color between outgoing and incoming frames).
 5. Responsive at mobile widths: stacked form fields, smaller timer text, wrapping roster.
 
 ## Non-Goals
 
 - No new libraries, CSS frameworks, build tooling, or external assets.
 - No changes to routes, controller logic, or data flow.
-- No new features beyond the small timer-state polish listed above.
+- No new features beyond the timer-state polish and player-color theming listed above.
