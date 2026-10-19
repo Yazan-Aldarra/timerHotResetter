@@ -31,8 +31,9 @@ Dark, focused "tabletop" theme:
 - Current player name displayed large and bold.
 - Timer digits use `clamp()` sizing and tabular numerals so they do not jump while counting.
 - Circular clock ring around the digits, with tick marks. The player-colored arc depletes like a clock and fades as time runs down.
-- Audible ticking each beat, generated with the Web Audio API (no asset files). Tempo is ratioed to the round: it holds at 1000ms for the first half, then accelerates smoothly to 150ms, so short rounds do not start frantic.
-- A sound toggle in the top bar mutes/unmutes ticking. Audio unlocks on the first click/keypress and starts ticking immediately once unlocked (browser autoplay rules).
+- Audible ticking each beat, generated with the Web Audio API (no asset files). Tempo is ratioed to the round: it holds at 1000ms for the first half, then accelerates smoothly to 150ms, so short rounds do not start frantic. Ticks run through a master gain and compressor for a noticeably louder sound without clipping.
+- A distinct ascending three-note chime plays when the active player changes, both on automatic timeout and manual skip. It is timed to the name swap and is kept separate from the ticking so the transition is unmistakable.
+- A sound toggle in the top bar mutes/unmutes all game sounds (ticking and the next-player chime). Audio unlocks on the first click/keypress and starts ticking immediately once unlocked (browser autoplay rules).
 - Low-time state: last 10 seconds switch digits/ring to red and pulse gently.
 - Roster strip of player pills, with the active player highlighted; keeps everyone oriented.
 - **Player colors:** a curated 8-color palette (cyan, amber, violet, pink, blue, green, orange, lime) is assigned by player order and cycles after 8. Each roster pill shows its color; the active pill is solid with dark text.
@@ -56,7 +57,10 @@ Dark, focused "tabletop" theme:
    - highlight the active roster pill in `nextUser()`,
    - assign palette colors to players by index and set `--player-color` on the card and roster pills in `setCurrentUser()`,
    - wire card click + Enter/Space to reset the countdown and advance to the next player, spawn a ripple at the pointer, and run a two-phase name swap with the Web Animations API (change the player and color between outgoing and incoming frames),
-   - schedule Web Audio ticks with a duration-relative delay (1000ms until halfway, easing down to 150ms), gated by a mute toggle; once audio unlocks, restart the tick schedule so sound begins immediately.
+   - schedule Web Audio ticks with a duration-relative delay (1000ms until halfway, easing down to 150ms), gated by a mute toggle; once audio unlocks, restart the tick schedule so sound begins immediately,
+   - route ticks and the player-change chime through a master gain plus `DynamicsCompressorNode`, raising tick volume to a clearly audible level,
+   - add `playNextUserCue()` (ascending 659.25 → 880 → 1318.51Hz triangle tones) and trigger it from `setCurrentUser(index, playCue)` only when `nextUser()` changes players, so the initial render stays silent while automatic timeout, click, and keyboard skips all chime,
+   - cancel any in-progress cue when a new transition starts or the sound is muted, preventing overlapping or lingering tones.
 5. Responsive at mobile widths: stacked form fields, smaller timer text, wrapping roster.
 
 ## Non-Goals

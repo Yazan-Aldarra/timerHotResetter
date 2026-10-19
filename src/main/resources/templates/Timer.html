@@ -541,7 +541,7 @@
             <div class="topbar-actions">
                 <span class="round-badge">Game in progress</span>
                 <button id="sound" class="sound-toggle" type="button" data-on="true" aria-pressed="true"
-                    aria-label="Mute ticking">
+                    aria-label="Mute sounds">
                     <svg class="icon-sound-on" width="17" height="17" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                         aria-hidden="true">
@@ -637,6 +637,12 @@
         let soundOn = true;
         let audioCtx;
         let audioUnlocked = false;
+        let masterGain;
+        let activeCue = null;
+
+        const TICK_VOLUME = 0.36;
+        const CUE_VOLUME = 0.5;
+        const MASTER_VOLUME = 1.4;
 
         const PLAYER_COLORS = [
             "#3dd6d0",
@@ -666,11 +672,15 @@
             return item;
         });
 
-        function setCurrentUser(index) {
+        function setCurrentUser(index, playCue = false) {
             currentIndex = ((index % userNames.length) + userNames.length) % userNames.length;
             currentUserDiv.textContent = userNames[currentIndex];
             timerCard.style.setProperty("--player-color", playerColors[currentIndex]);
             rosterItems.forEach((item, i) => item.classList.toggle("active", i === currentIndex));
+
+            if (playCue) {
+                playNextUserCue();
+            }
         }
 
         function renderTimer() {
@@ -684,6 +694,25 @@
             timerCard.classList.toggle("is-low", currentTimer <= 10);
         }
 
+        function ensureAudioGraph() {
+            if (!audioCtx || masterGain) {
+                return;
+            }
+
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = MASTER_VOLUME;
+
+            const compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.value = -10;
+            compressor.knee.value = 8;
+            compressor.ratio.value = 4;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.25;
+
+            masterGain.connect(compressor);
+            compressor.connect(audioCtx.destination);
+        }
+
         function unlockAudio() {
             const AudioCtor = window.AudioContext || window.webkitAudioContext;
 
@@ -694,6 +723,8 @@
             if (!audioCtx) {
                 audioCtx = new AudioCtor();
             }
+
+            ensureAudioGraph();
 
             const startTicking = () => {
                 if (audioUnlocked) {
@@ -715,7 +746,7 @@
         }
 
         function playTick() {
-            if (!soundOn || !audioCtx || audioCtx.state !== "running") {
+            if (!soundOn || !audioCtx || audioCtx.state !== "running" || !masterGain) {
                 return;
             }
 
@@ -724,15 +755,79 @@
             const gain = audioCtx.createGain();
 
             osc.type = "triangle";
-            osc.frequency.setValueAtTime(1100, now);
+            osc.frequency.setValueAtTime(1150, now);
             gain.gain.setValueAtTime(0.0001, now);
-            gain.gain.exponentialRampToValueAtTime(0.09, now + 0.005);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+            gain.gain.exponentialRampToValueAtTime(TICK_VOLUME, now + 0.005);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
 
             osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            gain.connect(masterGain);
             osc.start(now);
-            osc.stop(now + 0.07);
+            osc.stop(now + 0.075);
+        }
+
+        function stopActiveCue() {
+            if (!activeCue || !audioCtx) {
+                return;
+            }
+
+            const now = audioCtx.currentTime;
+            const cue = activeCue;
+            activeCue = null;
+
+            const currentVolume = cue.gain.gain.value;
+            cue.gain.gain.cancelScheduledValues(now);
+            cue.gain.gain.setValueAtTime(Math.max(currentVolume, 0.0001), now);
+            cue.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+            cue.oscillators.forEach((osc) => {
+                try {
+                    osc.stop(now + 0.03);
+                } catch (error) {}
+            });
+        }
+
+        function playNextUserCue() {
+            if (!soundOn || !audioCtx || audioCtx.state !== "running" || !masterGain) {
+                return;
+            }
+
+            const now = audioCtx.currentTime;
+
+            stopActiveCue();
+
+            const cueGain = audioCtx.createGain();
+            cueGain.gain.setValueAtTime(0.0001, now);
+            cueGain.gain.exponentialRampToValueAtTime(CUE_VOLUME, now + 0.02);
+            cueGain.gain.setValueAtTime(CUE_VOLUME, now + 0.28);
+            cueGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+            cueGain.connect(masterGain);
+
+            const notes = [
+                [659.25, 0, 0.18],
+                [880, 0.12, 0.18],
+                [1318.51, 0.24, 0.24]
+            ];
+
+            const oscillators = notes.map(([frequency, offset, duration]) => {
+                const osc = audioCtx.createOscillator();
+
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(frequency, now + offset);
+                osc.connect(cueGain);
+                osc.start(now + offset);
+                osc.stop(now + offset + duration);
+
+                return osc;
+            });
+
+            activeCue = { gain: cueGain, oscillators };
+
+            window.setTimeout(() => {
+                if (activeCue && activeCue.gain === cueGain) {
+                    activeCue = null;
+                }
+            }, 560);
         }
 
         function tickDelay(remaining) {
@@ -802,7 +897,7 @@
         function syncSound() {
             soundButton.dataset.on = String(soundOn);
             soundButton.setAttribute("aria-pressed", String(soundOn));
-            soundButton.setAttribute("aria-label", soundOn ? "Mute ticking" : "Unmute ticking");
+            soundButton.setAttribute("aria-label", soundOn ? "Mute sounds" : "Unmute sounds");
         }
 
         soundButton.addEventListener("click", () => {
@@ -817,6 +912,7 @@
                 }
             } else {
                 clearTimeout(tickTimer);
+                stopActiveCue();
             }
 
             syncSound();
@@ -829,7 +925,7 @@
             const nextIndex = (currentIndex + 1) % userNames.length;
 
             if (reduceMotion.matches) {
-                setCurrentUser(nextIndex);
+                setCurrentUser(nextIndex, true);
                 return;
             }
 
@@ -849,7 +945,7 @@
                     return;
                 }
 
-                setCurrentUser(nextIndex);
+                setCurrentUser(nextIndex, true);
 
                 currentUserDiv.animate(
                     [
