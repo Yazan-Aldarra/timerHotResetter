@@ -1,6 +1,7 @@
 package ap.be;
 
 public enum Template {
+    TIMER("Timer"),
     HOME("Home");
 
     private final String fileName;
