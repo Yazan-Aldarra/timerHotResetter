@@ -12,23 +12,31 @@
 
     <li hidden=true id="template_player_list_item">
         <label for="name_0">Name</label>
-        <input id="name_0" type="text" name="name_0">
+        <input id="name_0" type="text" name="name">
     </li>
 
-    <form>
+
+    <form th:action="@{test}" method="post">
         <ul id="players_list">
             <li>
                 <label for="name_1">Player 1 name: </label>
-                <input id="name_1" type="text" name="name_1">
+                <input id="name_1" type="text" name="name">
             </li>
         </ul>
+
+        <label for="timeInSec">Time in secounds:</label>
+        <input id="timeInSec" type="number" name="timeInSec">
+        <button>Start</button>
     </form>
     <button id="add_user">add player</button>
+
+
 
     <script>
         const btn = document.querySelector("#add_user");
         const players_list = document.querySelector("#players_list");
         const template_player_list_item = document.querySelector("#template_player_list_item");
+
         btn.addEventListener("click", () => {
 
             const list_items = players_list.querySelectorAll("li");
@@ -43,7 +51,6 @@
             const name = `name_${index}`;
 
             input.setAttribute("id", name);
-            input.setAttribute("name", name);
             label.setAttribute("for", name);
 
             label.textContent = `Player ${index} name: `;
