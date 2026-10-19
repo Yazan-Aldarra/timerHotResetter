@@ -31,13 +31,15 @@ Dark, focused "tabletop" theme:
 - Current player name displayed large and bold.
 - Timer digits use `clamp()` sizing and tabular numerals so they do not jump while counting.
 - Circular clock ring around the digits, with tick marks. The player-colored arc depletes like a clock and fades as time runs down.
+- Audible ticking each beat, generated with the Web Audio API (no asset files). Tempo is ratioed to the round: it holds at 1000ms for the first half, then accelerates smoothly to 150ms, so short rounds do not start frantic.
+- A sound toggle in the top bar mutes/unmutes ticking. Audio unlocks on the first click/keypress and starts ticking immediately once unlocked (browser autoplay rules).
 - Low-time state: last 10 seconds switch digits/ring to red and pulse gently.
 - Roster strip of player pills, with the active player highlighted; keeps everyone oriented.
 - **Player colors:** a curated 8-color palette (cyan, amber, violet, pink, blue, green, orange, lime) is assigned by player order and cycles after 8. Each roster pill shows its color; the active pill is solid with dark text.
 - The timer card adopts the current player's color across its whole surface: background tint, border, aura, player name, clock ring, ripple/flash, focus ring, and hint dot. Colors change during the name-swap blur, with a short transition.
 - Low-time red overrides the clock digits, ring, border, and aura only; the player name, card background, and roster keep their assigned color.
 - Toggle button becomes a pill with play/pause icon and a label that changes with state ("Pause timer" / "Resume timer").
-- The whole timer card is a skip target: clicking/tapping it calls `nextUser()`. It is also keyboard-activatable with Enter/Space.
+- The whole timer card is a skip target: clicking/tapping it advances to the next player and resets the countdown to the full round time. It is also keyboard-activatable with Enter/Space.
 - Skip feedback: a ripple from the click point, a brief glow flash on the card, and a blur/slide "swap" animation on the player name. Animations are skipped under `prefers-reduced-motion`.
 - `aria-live="polite"` on the player name; the timer uses `role="timer"` with `aria-live="off"` so the countdown does not spam screen readers.
 - Existing Thymeleaf bindings (`th:text`, `th:each`) and timer logic stay intact.
@@ -53,7 +55,8 @@ Dark, focused "tabletop" theme:
    - add/remove an `.is-low` class at 10 seconds,
    - highlight the active roster pill in `nextUser()`,
    - assign palette colors to players by index and set `--player-color` on the card and roster pills in `setCurrentUser()`,
-   - wire card click + Enter/Space to `nextUser()`, spawn a ripple at the pointer, and run a two-phase name swap with the Web Animations API (change the player and color between outgoing and incoming frames).
+   - wire card click + Enter/Space to reset the countdown and advance to the next player, spawn a ripple at the pointer, and run a two-phase name swap with the Web Animations API (change the player and color between outgoing and incoming frames),
+   - schedule Web Audio ticks with a duration-relative delay (1000ms until halfway, easing down to 150ms), gated by a mute toggle; once audio unlocks, restart the tick schedule so sound begins immediately.
 5. Responsive at mobile widths: stacked form fields, smaller timer text, wrapping roster.
 
 ## Non-Goals
