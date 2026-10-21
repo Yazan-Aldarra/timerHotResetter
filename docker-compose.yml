@@ -1,0 +1,35 @@
+services:
+  timer-hot-resetter:
+    build: .
+    image: timer-hot-resetter:latest
+    container_name: timer-hot-resetter
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Brussels
+    expose:
+      - "8080"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/test"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.timer-hot-resetter.rule=Host(`timer.localstacksystems.xyz`)"
+      - "traefik.http.routers.timer-hot-resetter.entrypoints=websecure"
+      - "traefik.http.routers.timer-hot-resetter.tls.certresolver=letsencrypt"
+      - "traefik.http.services.timer-hot-resetter.loadbalancer.server.port=8080"
+      - "traefik.http.routers.timer-hot-resetter-http.rule=Host(`timer.localstacksystems.xyz`)"
+      - "traefik.http.routers.timer-hot-resetter-http.entrypoints=web"
+      - "traefik.http.routers.timer-hot-resetter-http.middlewares=timer-hot-resetter-redirect"
+      - "traefik.http.middlewares.timer-hot-resetter-redirect.redirectscheme.scheme=https"
+
+networks:
+  traefik:
+    external: true
